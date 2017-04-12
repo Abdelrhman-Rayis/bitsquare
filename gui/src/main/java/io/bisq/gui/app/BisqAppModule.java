@@ -22,7 +22,10 @@ import io.bisq.common.Clock;
 import io.bisq.common.app.AppModule;
 import io.bisq.common.crypto.KeyRing;
 import io.bisq.common.crypto.KeyStorage;
+import io.bisq.common.persistance.*;
+import io.bisq.common.storage.FileManager;
 import io.bisq.common.storage.Storage;
+import io.bisq.core.FileManagerImpl;
 import io.bisq.core.alert.AlertModule;
 import io.bisq.core.app.BisqEnvironment;
 import io.bisq.core.arbitration.ArbitratorModule;
@@ -40,7 +43,6 @@ import io.bisq.gui.common.view.CachingViewLoader;
 import io.bisq.gui.main.overlays.notifications.NotificationCenter;
 import io.bisq.network.crypto.EncryptionServiceModule;
 import io.bisq.network.p2p.P2PModule;
-import io.bisq.common.persistance.ProtobufferResolver;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +65,7 @@ class BisqAppModule extends AppModule {
     @Override
     protected void configure() {
 
+        binder().disableCircularProxies();
         bind(BisqEnvironment.class).toInstance((BisqEnvironment) env);
 
         bind(CachingViewLoader.class).in(Singleton.class);
@@ -74,7 +77,20 @@ class BisqAppModule extends AppModule {
 
         File storageDir = new File(env.getRequiredProperty(Storage.DIR_KEY));
         bind(File.class).annotatedWith(named(Storage.DIR_KEY)).toInstance(storageDir);
+        bind(FileManager.class).to(FileManagerImpl.class);
+       // bind(new TypeLiteral<FileManager >() {})
+        //        .to(FileManagerImpl.class);
 
+        /*
+        bind(new TypeLiteral<FileManager<HashSetPersistable<TradeStatistics>>>() {}).toInstance(new FileManagerImpl<>());
+        bind(new TypeLiteral<FileManager<User>>() {}).toInstance(new FileManagerImpl<>());
+        bind(new TypeLiteral<FileManager<PlainTextWrapper>>() {}).toInstance(new FileManagerImpl<>());
+        bind(new TypeLiteral<FileManager<AddressEntryList >>() {}).toInstance(new FileManagerImpl<>());
+        bind(new TypeLiteral<FileManager<ListPersistable<CompensationRequest>>>() {}).toInstance(new FileManagerImpl<>());
+        bind(new TypeLiteral<FileManager<Navigation>>() {}).toInstance(new FileManagerImpl<>());
+        bind(new TypeLiteral<FileManager<Preferences>>() {}).toInstance(new FileManagerImpl<>());
+        bind(new TypeLiteral<FileManager<ListPersistable<VoteItemsList>>>() {}).toInstance(new FileManagerImpl<>());
+*/
         File keyStorageDir = new File(env.getRequiredProperty(KeyStorage.DIR_KEY));
         bind(File.class).annotatedWith(named(KeyStorage.DIR_KEY)).toInstance(keyStorageDir);
         bind(ProtobufferResolver.class).to(CoreProtobufferResolver.class).in(Singleton.class);

@@ -62,7 +62,8 @@ public class Storage<T extends Persistable> {
     }
 
     private final File dir;
-    private FileManager<T> fileManager;
+    @Inject
+    private FileManager fileManager;
     private File storageFile;
     private T serializable;
     private String fileName;
@@ -76,9 +77,10 @@ public class Storage<T extends Persistable> {
     ///////////////////////////////////////////////////////////////////////////////////////////
 
     @Inject
-    public Storage(@Named(DIR_KEY) File dir, ProtobufferResolver protobufferResolver) {
+    public Storage(@Named(DIR_KEY) File dir, FileManager fileManager) {
         this.dir = dir;
-        this.protobufferResolver = protobufferResolver;
+        //this.protobufferResolver = protobufferResolver;
+        this.fileManager = fileManager;
     }
 
     /*
@@ -90,14 +92,14 @@ public class Storage<T extends Persistable> {
     public void initWithFileName(String fileName) {
         this.fileName = fileName;
         storageFile = new File(dir, fileName);
-        fileManager = new FileManager<>(dir, storageFile, 300, protobufferResolver);
+        //fileManager = new FileManager(dir, storageFile, 300, protobufferResolver);
     }
 
     @Nullable
     public T initAndGetPersistedWithFileName(String fileName) {
         this.fileName = fileName;
         storageFile = new File(dir, fileName);
-        fileManager = new FileManager<>(dir, storageFile, 300, protobufferResolver);
+        //fileManager = new FileManager<>(dir, storageFile, 300, protobufferResolver);
 
         return getPersisted();
     }
@@ -112,7 +114,7 @@ public class Storage<T extends Persistable> {
         this.serializable = serializable;
         this.fileName = fileName;
         storageFile = new File(dir, fileName);
-        fileManager = new FileManager<>(dir, storageFile, 600, protobufferResolver);
+        //fileManager = new FileManager<>(dir, storageFile, 600, protobufferResolver);
 
         return getPersisted();
     }
@@ -168,7 +170,7 @@ public class Storage<T extends Persistable> {
         if (storageFile.exists()) {
             long now = System.currentTimeMillis();
             try {
-                T persistedObject = fileManager.read(storageFile);
+                T persistedObject = (T) fileManager.read(storageFile);
                 log.trace("Read {} completed in {}msec", storageFile, System.currentTimeMillis() - now);
 
                 // If we did not get any exception we can be sure the data are consistent so we make a backup

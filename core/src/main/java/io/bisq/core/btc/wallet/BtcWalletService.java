@@ -57,7 +57,7 @@ public class BtcWalletService extends WalletService implements KeyBagSupplier {
 
     @Inject
     public BtcWalletService(WalletsSetup walletsSetup,
-                            AddressEntryList addressEntryList,
+                            AddressEntryList  addressEntryList,
                             Preferences preferences,
                             FeeService feeService) {
         super(walletsSetup,

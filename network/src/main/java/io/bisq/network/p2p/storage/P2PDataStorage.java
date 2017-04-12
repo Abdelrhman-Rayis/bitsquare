@@ -10,7 +10,7 @@ import io.bisq.common.crypto.CryptoException;
 import io.bisq.common.crypto.Sig;
 import io.bisq.common.persistance.HashMapPersistable;
 import io.bisq.common.persistance.Persistable;
-import io.bisq.common.persistance.ProtobufferResolver;
+import io.bisq.common.storage.FileManager;
 import io.bisq.common.storage.FileUtil;
 import io.bisq.common.storage.ResourceNotFoundException;
 import io.bisq.common.storage.Storage;
@@ -70,14 +70,15 @@ public class P2PDataStorage implements MessageListener, ConnectionListener {
     // Constructor
     ///////////////////////////////////////////////////////////////////////////////////////////
 
-    public P2PDataStorage(Broadcaster broadcaster, NetworkNode networkNode, File storageDir, ProtobufferResolver protobufferResolver) {
+    public P2PDataStorage(Broadcaster broadcaster, NetworkNode networkNode, File storageDir, FileManager  fileManager,
+                          FileManager  fileManager2) {
         this.broadcaster = broadcaster;
 
         networkNode.addMessageListener(this);
         networkNode.addConnectionListener(this);
 
-        sequenceNumberMapStorage = new Storage<>(storageDir, protobufferResolver);
-        persistedEntryMapStorage = new Storage<>(storageDir, protobufferResolver);
+        sequenceNumberMapStorage = new Storage<>(storageDir, fileManager);
+        persistedEntryMapStorage = new Storage<>(storageDir, fileManager2);
 
         init(storageDir);
     }
@@ -734,7 +735,7 @@ public class P2PDataStorage implements MessageListener, ConnectionListener {
      * Used as value in map
      */
     @EqualsAndHashCode
-    private static final class MapValue implements Persistable {
+    public static final class MapValue implements Persistable {
         // That object is saved to disc. We need to take care of changes to not break deserialization.
         private static final long serialVersionUID = Version.LOCAL_DB_VERSION;
 

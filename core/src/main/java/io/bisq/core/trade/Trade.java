@@ -71,13 +71,13 @@ public abstract class Trade implements Tradable, Model {
     private static final Logger log = LoggerFactory.getLogger(Trade.class);
 
     public enum State {
-        // #################### Phase PREPARATION 
+        // #################### Phase PREPARATION
         // When trade protocol starts no funds are on stake
         PREPARATION(Phase.PREPARATION),
 
         // At first part maker/taker have different roles
         // taker perspective
-        // #################### Phase TAKER_FEE_PAID 
+        // #################### Phase TAKER_FEE_PAID
         TAKER_PUBLISHED_TAKER_FEE_TX(Phase.TAKER_FEE_PUBLISHED),
 
         // PUBLISH_DEPOSIT_TX_REQUEST
@@ -91,7 +91,7 @@ public abstract class Trade implements Tradable, Model {
         TAKER_RECEIVED_PUBLISH_DEPOSIT_TX_REQUEST(Phase.TAKER_FEE_PUBLISHED),
 
 
-        // #################### Phase DEPOSIT_PAID 
+        // #################### Phase DEPOSIT_PAID
         TAKER_PUBLISHED_DEPOSIT_TX(Phase.DEPOSIT_PUBLISHED),
 
 
@@ -728,7 +728,7 @@ public abstract class Trade implements Tradable, Model {
     public boolean isCurrencyForTakerFeeBtc() {
         return isCurrencyForTakerFeeBtc;
     }
-    
+
 
     ///////////////////////////////////////////////////////////////////////////////////////////
     // Private

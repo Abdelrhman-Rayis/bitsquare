@@ -58,7 +58,7 @@ public class BitcoinModule extends AppModule {
         bind(String.class).annotatedWith(Names.named(BtcOptionKeys.SOCKS5_DISCOVER_MODE)).toInstance(socks5DiscoverMode);
         bindConstant().annotatedWith(named(AppOptionKeys.PROVIDERS)).to(env.getRequiredProperty(AppOptionKeys.PROVIDERS));
 
-        bind(AddressEntryList.class).in(Singleton.class);
+        bind(AddressEntryList.class).to(AddressEntryListImpl.class).in(Singleton.class);
         bind(WalletsSetup.class).in(Singleton.class);
         bind(BtcWalletService.class).in(Singleton.class);
         bind(KeyBagSupplier.class).to(BtcWalletService.class);

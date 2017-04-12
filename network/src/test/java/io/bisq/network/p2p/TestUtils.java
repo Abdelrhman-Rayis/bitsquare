@@ -136,7 +136,7 @@ public class TestUtils {
 
         P2PService p2PService = new P2PService(seedNodesRepository, port, new File("seed_node_" + port), useLocalhostForP2P,
                 2, P2PService.MAX_CONNECTIONS_DEFAULT, new File("dummy"), null, null, null,
-                new Clock(), null, encryptionService, keyRing, getProtobufferResolver());
+                new Clock(), null, encryptionService, keyRing, getProtobufferResolver(), null, null, null);
         p2PService.start(new P2PServiceListener() {
             @Override
             public void onRequestingDataCompleted() {
@@ -177,11 +177,6 @@ public class TestUtils {
             @Override
             public Optional<Msg> fromProto(PB.Envelope envelope) {
                 return Optional.empty();
-            }
-
-            @Override
-            public Optional<Persistable> fromProto(PB.DiskEnvelope envelope) {
-                return null;
             }
         };
     }

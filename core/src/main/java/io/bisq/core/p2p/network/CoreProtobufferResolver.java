@@ -1,22 +1,17 @@
 package io.bisq.core.p2p.network;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.google.protobuf.ByteString;
 import io.bisq.common.crypto.PubKeyRing;
 import io.bisq.common.crypto.SealedAndSigned;
 import io.bisq.common.locale.*;
 import io.bisq.common.monetary.Price;
 import io.bisq.common.persistance.Msg;
-import io.bisq.common.persistance.Persistable;
 import io.bisq.common.persistance.ProtobufferResolver;
 import io.bisq.core.alert.Alert;
 import io.bisq.core.alert.PrivateNotificationMsg;
 import io.bisq.core.alert.PrivateNotificationPayload;
 import io.bisq.core.arbitration.*;
 import io.bisq.core.arbitration.messages.*;
-import io.bisq.core.btc.AddressEntry;
-import io.bisq.core.btc.AddressEntryList;
 import io.bisq.core.btc.data.RawTransactionInput;
 import io.bisq.core.dao.compensation.CompensationRequestPayload;
 import io.bisq.core.filter.Filter;
@@ -29,8 +24,6 @@ import io.bisq.core.payment.payload.*;
 import io.bisq.core.trade.Contract;
 import io.bisq.core.trade.messages.*;
 import io.bisq.core.trade.statistics.TradeStatistics;
-import io.bisq.core.user.BlockChainExplorer;
-import io.bisq.core.user.Preferences;
 import io.bisq.generated.protobuffer.PB;
 import io.bisq.network.p2p.CloseConnectionMsg;
 import io.bisq.network.p2p.NodeAddress;
@@ -76,12 +69,6 @@ import static io.bisq.generated.protobuffer.PB.Envelope.MessageCase.*;
  */
 @Slf4j
 public class CoreProtobufferResolver implements ProtobufferResolver {
-
-    //@Inject
-    private Provider<AddressEntryList> addressEntryList;
-
-    //@Inject
-    private Provider<Preferences> preferencesProvider;
 
     @Override
     public Optional<Msg> fromProto(PB.Envelope envelope) {
@@ -861,110 +848,6 @@ public class CoreProtobufferResolver implements ProtobufferResolver {
     }
 
 
-    //////////////////////////////// DISK /////////////////////////////////////
-
-    @Override
-    public Optional<Persistable> fromProto(PB.DiskEnvelope envelope) {
-        if (Objects.isNull(envelope)) {
-            log.warn("fromProtoBuf called with empty disk envelope.");
-            return Optional.empty();
-        }
-
-        log.debug("Convert protobuffer disk envelope: {}", envelope.getMessageCase());
-
-        Persistable result = null;
-        switch (envelope.getMessageCase()) {
-            case ADDRESS_ENTRY_LIST:
-                addToAddressEntryList(envelope);
-                result = addressEntryList.get();
-                break;
-                /*
-            case NAVIGATION:
-                result = getPing(envelope);
-                break;
-            case PERSISTED_PEERS:
-                result = getPing(envelope);
-                break;
-                */
-            case PREFERENCES:
-                setPreferences(envelope);
-                break;
-                /*
-            case USER:
-                result = getPing(envelope);
-                break;
-            case PERSISTED_P2P_STORAGE_DATA:
-                result = getPing(envelope);
-                break;
-            case SEQUENCE_NUMBER_MAP:
-                result = getPing(envelope);
-                break;
-                */
-            default:
-                log.warn("Unknown message case:{}:{}", envelope.getMessageCase());
-        }
-        return Optional.ofNullable(result);
-    }
-
-    private void setPreferences(PB.DiskEnvelope envelope) {
-        Preferences preferences = preferencesProvider.get();
-        preferences.setUserLanguage(envelope.getPreferences().getUserLanguage());
-        PB.Country userCountry = envelope.getPreferences().getUserCountry();
-        preferences.setUserCountry(new Country(userCountry.getCode(), userCountry.getName(), new Region(userCountry.getRegion().getCode(), userCountry.getRegion().getName())));
-        envelope.getPreferences().getFiatCurrenciesList().stream()
-                .forEach(tradeCurrency -> preferences.addFiatCurrency((FiatCurrency) getTradeCurrency(tradeCurrency)));
-        envelope.getPreferences().getCryptoCurrenciesList().stream()
-                .forEach(tradeCurrency -> preferences.addCryptoCurrency((CryptoCurrency) getTradeCurrency(tradeCurrency)));
-        PB.BlockChainExplorer bceMain = envelope.getPreferences().getBlockChainExplorerMainNet();
-        preferences.setBlockChainExplorerMainNet(new BlockChainExplorer(bceMain.getName(), bceMain.getTxUrl(), bceMain.getAddressUrl()));
-        PB.BlockChainExplorer bceTest = envelope.getPreferences().getBlockChainExplorerTestNet();
-        preferences.setBlockChainExplorerTestNet(new BlockChainExplorer(bceTest.getName(), bceTest.getTxUrl(), bceTest.getAddressUrl()));
-        preferences.setBackupDirectory(envelope.getPreferences().getBackupDirectory());
-        preferences.setAutoSelectArbitrators(envelope.getPreferences().getAutoSelectArbitrators());
-        preferences.setDontShowAgainMap(envelope.getPreferences().getDontShowAgainMapMap());
-        preferences.setTacAccepted(envelope.getPreferences().getTacAccepted());
-        preferences.setUseTorForBitcoinJ(envelope.getPreferences().getUseTorForBitcoinJ());
-        preferences.setShowOwnOffersInOfferBook(envelope.getPreferences().getShowOwnOffersInOfferBook());
-        PB.Locale preferredLocale = envelope.getPreferences().getPreferredLocale();
-        PB.TradeCurrency preferredTradeCurrency = envelope.getPreferences().getPreferredTradeCurrency();
-        preferences.setPreferredTradeCurrency(getTradeCurrency(preferredTradeCurrency));
-        preferences.setWithdrawalTxFeeInBytes(envelope.getPreferences().getWithdrawalTxFeeInBytes());
-        preferences.setMaxPriceDistanceInPercent(envelope.getPreferences().getMaxPriceDistanceInPercent());
-        preferences.setOfferBookChartScreenCurrencyCode(envelope.getPreferences().getOfferBookChartScreenCurrencyCode());
-        preferences.setTradeChartsScreenCurrencyCode(envelope.getPreferences().getTradeChartsScreenCurrencyCode());
-        preferences.setUseStickyMarketPrice(envelope.getPreferences().getUseStickyMarketPrice());
-        preferences.setSortMarketCurrenciesNumerically(envelope.getPreferences().getSortMarketCurrenciesNumerically());
-        preferences.setUsePercentageBasedPrice(envelope.getPreferences().getUsePercentageBasedPrice());
-        preferences.setPeerTagMap(envelope.getPreferences().getPeerTagMapMap());
-        preferences.setBitcoinNodes(envelope.getPreferences().getBitcoinNodes());
-        preferences.setIgnoreTradersList(envelope.getPreferences().getIgnoreTradersListList());
-        preferences.setDirectoryChooserPath(envelope.getPreferences().getDirectoryChooserPath());
-        preferences.setBuyerSecurityDepositAsLong(envelope.getPreferences().getBuyerSecurityDepositAsLong());
-    }
-
-    private TradeCurrency getTradeCurrency(PB.TradeCurrency tradeCurrency) {
-        switch (tradeCurrency.getMessageCase()) {
-            case FIAT_CURRENCY:
-                return new FiatCurrency(tradeCurrency.getCode(), getLocale(tradeCurrency.getFiatCurrency().getDefaultLocale()));
-            case CRYPTO_CURRENCY:
-                return new CryptoCurrency(tradeCurrency.getCode(), tradeCurrency.getName(), tradeCurrency.getSymbol(),
-                        tradeCurrency.getCryptoCurrency().getIsAsset());
-            default:
-                log.warn("Unknown tradecurrency: {}", tradeCurrency.getMessageCase());
-        }
-
-        return null;
-    }
-
-    private Locale getLocale(PB.Locale locale) {
-        return new Locale(locale.getLanguage(), locale.getCountry(), locale.getVariant());
-    }
-
-    private void addToAddressEntryList(PB.DiskEnvelope envelope) {
-        envelope.getAddressEntryList().getAddressEntryList().stream().map(addressEntry -> addressEntryList.get().addAddressEntry(
-                new AddressEntry(addressEntry.getPubKey().toByteArray(), addressEntry.getPubKeyHash().toByteArray(), addressEntry.getParamId(), AddressEntry.Context.valueOf(addressEntry.getContext().name()),
-                        addressEntry.getOfferId(), Coin.valueOf(addressEntry.getCoinLockedInMultiSig().getValue()), addressEntryList.get().getKeyBagSupplier())));
-    }
 
 
 }

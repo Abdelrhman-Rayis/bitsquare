@@ -1,0 +1,131 @@
+/*
+ * This file is part of bisq.
+ *
+ * bisq is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at
+ * your option) any later version.
+ *
+ * bisq is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with bisq. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package io.bisq.core.btc;
+
+import com.google.inject.Inject;
+import com.google.protobuf.Message;
+import io.bisq.common.app.Version;
+import io.bisq.common.storage.Storage;
+import io.bisq.core.btc.wallet.KeyBagSupplier;
+import io.bisq.generated.protobuffer.PB;
+import lombok.Getter;
+import org.bitcoinj.core.Wallet;
+import org.bitcoinj.crypto.DeterministicKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+/**
+ * The List supporting our persistence solution.
+ */
+public final class AddressEntryListImpl implements AddressEntryList {
+    // That object is saved to disc. We need to take care of changes to not break deserialization.
+    private static final long serialVersionUID = Version.LOCAL_DB_VERSION;
+    private static final Logger log = LoggerFactory.getLogger(AddressEntryList .class);
+
+    final transient private Storage<AddressEntryList > storage;
+    @Getter
+    final transient private KeyBagSupplier keyBagSupplier;
+    transient private Wallet wallet;
+    @Getter
+    private List<AddressEntry> addressEntryList = new ArrayList<>();
+
+    @Inject
+    public AddressEntryListImpl (Storage<AddressEntryList > storage, KeyBagSupplier keyBagSupplier) {
+        this.storage = storage;
+        this.keyBagSupplier = keyBagSupplier;
+    }
+
+    @Override
+    public void onWalletReady(Wallet wallet) {
+        this.wallet = wallet;
+
+        AddressEntryList  persisted = storage.initAndGetPersisted(this);
+        if (persisted != null) {
+            for (AddressEntry addressEntry : persisted.getAddressEntryList()) {
+                DeterministicKey keyFromPubHash = (DeterministicKey) wallet.findKeyFromPubHash(addressEntry.getPubKeyHash());
+                if (keyFromPubHash != null) {
+                    addressEntry.setDeterministicKey(keyFromPubHash);
+                    add(addressEntry);
+                } else {
+                    log.warn("Key from addressEntry not found in that wallet " + addressEntry.toString());
+                }
+            }
+        } else {
+            add(new AddressEntry(wallet.freshReceiveKey(), wallet.getParams(), AddressEntry.Context.ARBITRATOR));
+            storage.queueUpForSave();
+        }
+    }
+
+    private boolean add(AddressEntry addressEntry) {
+        return addressEntryList.add(addressEntry);
+    }
+
+    private boolean remove(AddressEntry addressEntry) {
+        return addressEntryList.remove(addressEntry);
+    }
+
+    @Override
+    public AddressEntry addAddressEntry(AddressEntry addressEntry) {
+        boolean changed = add(addressEntry);
+        if (changed)
+            storage.queueUpForSave();
+        return addressEntry;
+    }
+
+
+    @Override
+    public void swapTradeToSavings(String offerId) {
+        Optional<AddressEntry> addressEntryOptional = addressEntryList.stream().filter(addressEntry -> offerId.equals(addressEntry.getOfferId())).findAny();
+        if (addressEntryOptional.isPresent()) {
+            AddressEntry addressEntry = addressEntryOptional.get();
+            boolean changed1 = add(new AddressEntry(addressEntry.getKeyPair(), wallet.getParams(), AddressEntry.Context.AVAILABLE));
+            boolean changed2 = remove(addressEntry);
+            if (changed1 || changed2)
+                storage.queueUpForSave();
+        }
+    }
+
+
+    @Override
+    public void swapToAvailable(AddressEntry addressEntry) {
+        remove(addressEntry);
+        boolean changed1 = add(new AddressEntry(addressEntry.getKeyPair(), wallet.getParams(), AddressEntry.Context.AVAILABLE));
+        boolean changed2 = remove(addressEntry);
+        if (changed1 || changed2)
+            storage.queueUpForSave();
+    }
+
+    @Override
+    public void queueUpForSave() {
+        storage.queueUpForSave(50);
+    }
+
+    @Override
+    public Message toProtobuf() {
+        return PB.DiskEnvelope.newBuilder().setAddressEntryList(PB.AddressEntryList.newBuilder()
+                .addAllAddressEntry(getAddressEntryList().stream()
+                        .map(addressEntry -> ((PB.AddressEntry) addressEntry.toProtobuf()))
+                        .collect(Collectors.toList())))
+                .build();
+    }
+}

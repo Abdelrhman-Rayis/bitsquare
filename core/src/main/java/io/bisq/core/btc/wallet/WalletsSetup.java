@@ -28,7 +28,7 @@ import io.bisq.common.app.Log;
 import io.bisq.common.handlers.ExceptionHandler;
 import io.bisq.common.handlers.ResultHandler;
 import io.bisq.common.persistance.LongPersistable;
-import io.bisq.common.persistance.ProtobufferResolver;
+import io.bisq.common.storage.FileManager;
 import io.bisq.common.storage.FileUtil;
 import io.bisq.common.storage.Storage;
 import io.bisq.core.app.BisqEnvironment;
@@ -74,7 +74,7 @@ public class WalletsSetup {
     private static final String SPV_CHAIN_FILE_NAME = "bisq.spvchain";
 
     private final RegTestHost regTestHost;
-    private final AddressEntryList addressEntryList;
+    private final AddressEntryList AddressEntryList;
     private final UserAgent userAgent;
     private final Preferences preferences;
     private final Socks5ProxyProvider socks5ProxyProvider;
@@ -97,17 +97,17 @@ public class WalletsSetup {
 
     @Inject
     public WalletsSetup(RegTestHost regTestHost,
-                        AddressEntryList addressEntryList,
+                        AddressEntryList AddressEntryList,
                         UserAgent userAgent,
                         Preferences preferences,
                         BisqEnvironment bisqEnvironment,
                         Socks5ProxyProvider socks5ProxyProvider,
-                        ProtobufferResolver protobufferResolver,
+                        FileManager fileManager,
                         @Named(BtcOptionKeys.WALLET_DIR) File appDir,
                         @Named(BtcOptionKeys.SOCKS5_DISCOVER_MODE) String socks5DiscoverModeString) {
 
         this.regTestHost = regTestHost;
-        this.addressEntryList = addressEntryList;
+        this.AddressEntryList = AddressEntryList;
         this.userAgent = userAgent;
         this.preferences = preferences;
         this.socks5ProxyProvider = socks5ProxyProvider;
@@ -118,7 +118,7 @@ public class WalletsSetup {
         params = WalletUtils.getParameters();
         walletDir = new File(appDir, "bitcoin");
 
-        storage = new Storage<>(walletDir, protobufferResolver);
+        storage = new Storage<>(walletDir, fileManager);
         LongPersistable nonce = storage.initAndGetPersistedWithFileName("BloomFilterNonce");
         if (nonce != null) {
             bloomFilterTweak = nonce.getLongPayload();
@@ -209,7 +209,7 @@ public class WalletsSetup {
 
                 // Map to user thread
                 UserThread.execute(() -> {
-                    addressEntryList.onWalletReady(walletConfig.getBtcWallet());
+                    AddressEntryList.onWalletReady(walletConfig.getBtcWallet());
                     timeoutTimer.stop();
                     setupCompletedHandlers.stream().forEach(Runnable::run);
                 });
@@ -507,7 +507,7 @@ public class WalletsSetup {
     }
 
     public Set<Address> getAddressesByContext(AddressEntry.Context context) {
-        return ImmutableList.copyOf(addressEntryList.getAddressEntryList()).stream()
+        return ImmutableList.copyOf(AddressEntryList.getAddressEntryList()).stream()
                 .filter(addressEntry -> addressEntry.getContext() == context)
                 .map(AddressEntry::getAddress)
                 .collect(Collectors.toSet());

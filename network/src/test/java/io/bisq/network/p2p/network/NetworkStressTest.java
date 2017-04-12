@@ -383,7 +383,7 @@ public class NetworkStressTest {
 
         return new P2PService(seedNodesRepository, port, peerTorDir, useLocalhostForP2P,
                 REGTEST_NETWORK_ID, P2PService.MAX_CONNECTIONS_DEFAULT, peerStorageDir, null, null, null,
-                new Clock(), null, peerEncryptionService, peerKeyRing, TestUtils.getProtobufferResolver());
+                new Clock(), null, peerEncryptionService, peerKeyRing, TestUtils.getProtobufferResolver(), null, null, null);
     }
 
     // ## TEST SETUP: P2P service listener classes

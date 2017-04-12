@@ -19,7 +19,7 @@ package io.bisq.core.trade.closed;
 
 import com.google.inject.Inject;
 import io.bisq.common.crypto.KeyRing;
-import io.bisq.common.persistance.ProtobufferResolver;
+import io.bisq.common.storage.FileManager;
 import io.bisq.common.storage.Storage;
 import io.bisq.core.offer.Offer;
 import io.bisq.core.provider.price.PriceFeedService;
@@ -40,10 +40,10 @@ public class ClosedTradableManager {
 
     @Inject
     public ClosedTradableManager(KeyRing keyRing, PriceFeedService priceFeedService,
-                                 ProtobufferResolver protobufferResolver,
+                                 FileManager  fileManager,
                                  @Named(Storage.DIR_KEY) File storageDir) {
         this.keyRing = keyRing;
-        final Storage<TradableList<Tradable>> tradableListStorage = new Storage<>(storageDir, protobufferResolver);
+        final Storage<TradableList<Tradable>> tradableListStorage = new Storage<>(storageDir, fileManager);
         // The ClosedTrades object can become a few MB so we don't keep so many backups
         tradableListStorage.setNumMaxBackupFiles(3);
         this.closedTrades = new TradableList<>(tradableListStorage, "ClosedTrades");

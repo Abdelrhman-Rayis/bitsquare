@@ -259,7 +259,7 @@ public class BisqEnvironment extends StandardEnvironment {
                 setProperty(RpcOptionKeys.RPC_PORT, rpcPort);
                 setProperty(RpcOptionKeys.RPC_BLOCK_NOTIFICATION_PORT, rpcBlockNotificationPort);
                 setProperty(RpcOptionKeys.DUMP_BLOCKCHAIN_DATA, dumpBlockchainData);
-                
+
                 setProperty(BtcOptionKeys.BTC_NODES, btcNodes);
                 setProperty(BtcOptionKeys.USE_TOR_FOR_BTC, useTorForBtc);
                 setProperty(BtcOptionKeys.WALLET_DIR, btcNetworkDir);

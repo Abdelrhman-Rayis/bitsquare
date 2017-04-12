@@ -18,7 +18,7 @@
 package io.bisq.core.dao.blockchain;
 
 import io.bisq.common.persistance.Persistable;
-import io.bisq.common.persistance.ProtobufferResolver;
+import io.bisq.common.storage.FileManager;
 import io.bisq.common.storage.Storage;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Nullable;
 import java.io.File;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -64,8 +63,8 @@ public class TxOutputMap implements Persistable {
     // Constructor
     ///////////////////////////////////////////////////////////////////////////////////////////
 
-    public TxOutputMap(File storageDir, ProtobufferResolver protobufferResolver) {
-        storage = new Storage<>(storageDir, protobufferResolver);
+    public TxOutputMap(File storageDir, FileManager  fileManager) {
+        storage = new Storage<>(storageDir, fileManager);
         TxOutputMap persisted = storage.initAndGetPersisted(this, "BsqTxOutputMap");
         if (persisted != null) {
             map.putAll(persisted.getMap());

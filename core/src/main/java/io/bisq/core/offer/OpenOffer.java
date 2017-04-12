@@ -147,4 +147,3 @@ public final class OpenOffer implements Tradable {
     }
 }
 
-   
