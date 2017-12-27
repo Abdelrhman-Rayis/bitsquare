@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ This file is part of Bitsquare.
+  ~ This file is part of Bisq.
   ~
-  ~ Bitsquare is free software: you can redistribute it and/or modify it
+  ~ Bisq is free software: you can redistribute it and/or modify it
   ~ under the terms of the GNU Affero General Public License as published by
   ~ the Free Software Foundation, either version 3 of the License, or (at
   ~ your option) any later version.
   ~
-  ~ Bitsquare is distributed in the hope that it will be useful, but WITHOUT
+  ~ Bisq is distributed in the hope that it will be useful, but WITHOUT
   ~ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
   ~ FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
   ~ License for more details.
   ~
   ~ You should have received a copy of the GNU Affero General Public License
-  ~ along with Bitsquare. If not, see <http://www.gnu.org/licenses/>.
+  ~ along with Bisq. If not, see <http://www.gnu.org/licenses/>.
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -21,8 +21,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>parent</artifactId>
-        <groupId>io.bitsquare</groupId>
-        <version>0.4.9.9.1</version>
+        <groupId>io.bisq</groupId>
+        <version>0.6.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -49,24 +49,63 @@
         </resources>
 
         <plugins>
+            <!-- Bouncycastle jars are signed and cannot be placed inside shaded jar.
+            we ship them beside our app in /lib -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-bouncycastle</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <stripVersion>true</stripVersion>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.bouncycastle</groupId>
+                                    <artifactId>bcprov-jdk15on</artifactId>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.bouncycastle</groupId>
+                                    <artifactId>bcpg-jdk15on</artifactId>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                 </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
+                <version>3.1.0</version>
                 <configuration>
                     <!-- broken with Java 8 (MSHADE-174), using ProGuard instead. -->
                     <minimizeJar>false</minimizeJar>
                     <transformers>
-                        <transformer
-                                implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                            <mainClass>io.bitsquare.app.BitsquareAppMain</mainClass>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <manifestEntries>
+                                <Main-Class>io.bisq.gui.app.BisqAppMain</Main-Class>
+                                <!-- the specified bouncy castle jar classes  -->
+                                <Class-Path>lib/bcpg-jdk15on.jar lib/bcprov-jdk15on.jar</Class-Path>
+                            </manifestEntries>
                         </transformer>
                     </transformers>
+                    <shadedArtifactAttached>true</shadedArtifactAttached>
                     <filters>
                         <filter>
                             <!-- exclude signatures, the bundling process breaks them for some reason -->
                             <artifact>*:*</artifact>
                             <excludes>
+                                <exclude>META-INF/maven/**/pom.properties</exclude>
                                 <exclude>META-INF/*.SF</exclude>
                                 <exclude>META-INF/*.DSA</exclude>
                                 <exclude>META-INF/*.RSA</exclude>
@@ -135,9 +174,6 @@
                                         </urn>
                                         <urn>
                                             com.google.inject:guice:3.0:jar:null:compile:9d84f15fe35e2c716a02979fb62f50a29f38aefa
-                                        </urn>
-                                        <urn>
-                                            com.google.protobuf:protobuf-java:2.5.0:jar:null:compile:a10732c76bfacdbd633a7eb0f7968b1059a65dfa
                                         </urn>
                                         <urn>
                                             com.google.zxing:core:2.0:jar:null:compile:001a5b8ccf93ca2fb7c40a94417f8485e3c8b4a6
@@ -211,7 +247,7 @@
                                             org.apache.maven.plugins:maven-deploy-plugin:2.7:maven-plugin:null:runtime:6dadfb75679ca010b41286794f737088ebfe12fd
                                         </urn>
                                         <urn>
-                                            org.apache.maven.plugins:maven-enforcer-plugin:RELEASE:maven-plugin:null:runtime:e9bd7df541415bfe587ce082458f9a48bf9b55b4
+                                            org.apache.maven.plugins:maven-enforcer-plugin:1.4.1:maven-plugin:null:runtime:e9bd7df541415bfe587ce082458f9a48bf9b55b4
                                         </urn>
                                         <urn>
                                             org.apache.maven.plugins:maven-install-plugin:2.4:maven-plugin:null:runtime:9d1316166fe4c313f56276935e08df11f45267c2
@@ -235,7 +271,7 @@
                                             org.bitcoinj:orchid:1.1.1:jar:null:compile:7898329eae76ec6bfdf27081234bb222d5be09df
                                         </urn>
                                         <urn>
-                                            org.bouncycastle:bcprov-jdk15on:1.53:jar:null:compile:9d3def2fa5a0d2ed0c1146e9945df10d29eb4ccb
+                                            org.bouncycastle:bcprov-jdk15on:1.56:jar:null:compile:a153c6f9744a3e9dd6feab5e210e1c9861362ec7
                                         </urn>
                                         <urn>
                                             org.controlsfx:controlsfx:8.0.6_20:jar:null:compile:5a4ca2765419fe12af0f0c7c5a8129c53bb661d9
@@ -263,6 +299,9 @@
                                         </urn>
                                         <urn>
                                             org.springframework:spring-test:4.1.1.RELEASE:jar:null:test:406ce9c05253f7dd75ac3f31170c71cca7419d8a
+                                        </urn>
+                                        <urn>
+                                            com.google.protobuf:protobuf-java:3.2.0:jar:null:compile:62ccf171a106ff6791507f2d5364c275f9a3131d
                                         </urn>
 
                                         <!-- A check for the rules themselves -->
@@ -293,9 +332,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.bitsquare</groupId>
+            <groupId>io.bisq</groupId>
             <artifactId>core</artifactId>
-            <version>${project.parent.version}</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -315,12 +354,6 @@
             <artifactId>fontawesomefx</artifactId>
             <version>8.0.0</version>
         </dependency>
-
-        <!-- <dependency>
-             <groupId>org.fxmisc.richtext</groupId>
-             <artifactId>richtextfx</artifactId>
-             <version>0.4.1</version>
-         </dependency>-->
 
         <dependency>
             <groupId>com.googlecode.jcsv</groupId>

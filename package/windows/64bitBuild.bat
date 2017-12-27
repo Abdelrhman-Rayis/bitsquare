@@ -1,11 +1,11 @@
-:: Invoke from bitsquare home directory
+:: Invoke from bisq home directory
 :: edit iss file -> AppVersion
 :: edit -> -BappVersion and -srcfiles
 
 :: 64 bit build
 :: Needs Inno Setup 5 or later (http://www.jrsoftware.org/isdl.php)
 
-SET version=0.4.9.9.1
+SET version=0.6.2
 
 :: Private setup
 SET outdir=\\VBOXSVR\vm_shared_windows
@@ -15,12 +15,20 @@ SET outdir=\\VBOXSVR\vm_shared_windows
 call "%JAVA_HOME%\bin\javapackager.exe" -deploy ^
 -BappVersion="%version%" ^
 -native exe ^
--name Bitsquare ^
--title Bitsquare ^
--vendor Bitsquare ^
+-name Bisq ^
+-title Bisq ^
+-vendor Bisq ^
 -outdir %outdir% ^
--appclass io.bitsquare.app.BitsquareAppMain ^
--srcfiles %outdir%\Bitsquare-%version%.jar ^
--outfile Bitsquare ^
--Bruntime="%JAVA_HOME%\jre" ^
--Bicon=package\windows\Bitsquare.ico
+-appclass io.bisq.gui.app.BisqAppMain ^
+-srcfiles %outdir%\Bisq.jar ^
+-srcfiles %outdir%\bcpg-jdk15on.jar ^
+-srcfiles %outdir%\bcprov-jdk15on.jar ^
+-outfile Bisq ^
+-Bruntime="%JAVA_HOME%\jre"
+
+:: when we have support for security manager we use that
+:: -BjvmOptions=-Djava.security.manager ^
+:: -BjvmOptions=-Djava.security.debug=failure ^
+:: -BjvmOptions=-Djava.security.policy=file:bisq.policy ^
+
+:: -srcfiles "core/src/main/resources/bisq.policy" ^
